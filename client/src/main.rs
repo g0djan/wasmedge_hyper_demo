@@ -1,84 +1,60 @@
 #![deny(warnings)]
 #![warn(rust_2018_idioms)]
+
 use hyper::{body::HttpBody as _, Client};
-use hyper::{Body, Method, Request};
-// use tokio::io::{self, AsyncWriteExt as _};
+use tokio::time::Instant;
+// use futures::future::join_all;
 
 // A simple type alias so as to DRY.
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<()> {
-    let url_str = "http://eu.httpbin.org/get?msg=Hello";
-    println!("\nGET as byte stream: {}", url_str);
-    let url = url_str.parse::<hyper::Uri>().unwrap();
-    if url.scheme_str() != Some("http") {
-        println!("This example only works with 'http' URLs.");
-        return Ok(());
+
+    // let url_str = "http://example.com/get?";
+    let urls = vec![
+        "http://example.com/get?",
+        "http://google.com/get?",
+        "http://rust-lang.org/get?",
+        "http://github.com/get?",
+        "http://eu.httpbin.org/get?msg=Hello"
+    ];
+
+
+    let mut ftrs = Vec::new();
+    let start = Instant::now();
+    for url_str in &urls {
+        let url = url_str.parse::<hyper::Uri>().unwrap();
+        ftrs.push(fetch_url(url));
     }
-    fetch_url(url).await?;
-    // tokio::time::sleep(std::time::Duration::from_secs(5)).await;
 
-    let url_str = "http://eu.httpbin.org/get?msg=WasmEdge";
-    println!("\nGET and get result as string: {}", url_str);
-    let url = url_str.parse::<hyper::Uri>().unwrap();
-    fetch_url_return_str(url).await?;
-    // tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+    let _results = futures::future::join_all(ftrs).await;
+    let end = start.elapsed();
 
-    let url_str = "http://eu.httpbin.org/post";
-    let post_body_str = "hello wasmedge";
-    println!("\nPOST and get result as string: {}", url_str);
-    println!("with a POST body: {}", post_body_str);
-    let url = url_str.parse::<hyper::Uri>().unwrap();
-    post_url_return_str(url, post_body_str.as_bytes()).await
+    println!("Elapsed time async: {:.2?}", end);
+
+
+    let mut sync_results = Vec::new();
+    let start = Instant::now();
+    for url_str in &urls {
+        let url = url_str.parse::<hyper::Uri>().unwrap();
+        sync_results.push(fetch_url(url).await?);
+    }
+
+    let end = start.elapsed();
+
+    println!("Elapsed time sync: {:.2?}", end);
+    Ok(())
 }
 
 async fn fetch_url(url: hyper::Uri) -> Result<()> {
     let client = Client::new();
     let mut res = client.get(url).await?;
-
-    println!("Response: {}", res.status());
-    println!("Headers: {:#?}\n", res.headers());
-
-    // Stream the body, writing each chunk to stdout as we get it
-    // (instead of buffering and printing at the end).
     while let Some(next) = res.data().await {
         let chunk = next?;
         println!("{:#?}", chunk);
-        // io::stdout().write_all(&chunk).await?;
     }
 
     Ok(())
 }
 
-async fn fetch_url_return_str(url: hyper::Uri) -> Result<()> {
-    let client = Client::new();
-    let mut res = client.get(url).await?;
-
-    let mut resp_data = Vec::new();
-    while let Some(next) = res.data().await {
-        let chunk = next?;
-        resp_data.extend_from_slice(&chunk);
-    }
-    println!("{}", String::from_utf8_lossy(&resp_data));
-
-    Ok(())
-}
-
-async fn post_url_return_str(url: hyper::Uri, post_body: &'static [u8]) -> Result<()> {
-    let client = Client::new();
-    let req = Request::builder()
-        .method(Method::POST)
-        .uri(url)
-        .body(Body::from(post_body))?;
-    let mut res = client.request(req).await?;
-
-    let mut resp_data = Vec::new();
-    while let Some(next) = res.data().await {
-        let chunk = next?;
-        resp_data.extend_from_slice(&chunk);
-    }
-    println!("{}", String::from_utf8_lossy(&resp_data));
-
-    Ok(())
-}

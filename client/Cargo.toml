@@ -11,6 +11,7 @@ wasmedge_wasi_socket = { path = "/Users/godjan/github/wasmedge_wasi_socket" }
 
 [dependencies]
 hyper = { version = "0.14", features = ["full"] }
+futures = "0.3"
 tokio = { version = "1", features = [
     "full",
     "macros",
