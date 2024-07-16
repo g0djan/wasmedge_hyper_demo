@@ -9,8 +9,6 @@ type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<()> {
-    pretty_env_logger::init();
-
     let url_str = "http://eu.httpbin.org/get?msg=Hello";
     println!("\nGET as byte stream: {}", url_str);
     let url = url_str.parse::<hyper::Uri>().unwrap();
