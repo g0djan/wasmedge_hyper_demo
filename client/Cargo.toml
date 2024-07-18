@@ -4,9 +4,12 @@ version = "0.1.0"
 edition = "2021"
 
 [patch.crates-io]
+# { git = "https://github.com/g0djan/tokio.git", branch = "wamr" }
 tokio = { path = "/Users/godjan/github/tokio/tokio" }
-socket2 = { path = "/Users/godjan/github/socket2" }
+# { git = "https://github.com/g0djan/socket2.git", branch = "wamr" }
+socket2 = { path = "/Users/godjan/github/socket2" } 
 hyper = { git = "https://github.com/second-state/wasi_hyper.git", branch = "v0.14.x" }
+# { git = "https://github.com/g0djan/wasmedge_wasi_socket.git", branch = "wamr" }
 wasmedge_wasi_socket = { path = "/Users/godjan/github/wasmedge_wasi_socket" }
 
 [dependencies]
